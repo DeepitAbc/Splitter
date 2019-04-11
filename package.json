@@ -1,0 +1,27 @@
+{
+   "name": "splitter",
+   "version": "1.0.0",
+   "description": "Smart contracts for splitter on Ethereum blockchain",
+   "main": "index.js",
+   "directories": {
+      "test": "test"
+   },
+   "scripts": {
+      "test": "echo \"Error: no test specified\" && exit 1"
+   },
+   "author": "Bruzzone Paolo",
+   "license": "ISC",
+   "bugs": {},
+   "dependencies": {
+      "bn-chai": "^1.0.1",
+      "openzeppelin-solidity": "^2.1.1"
+   },
+   "devDependencies": {
+      "bluebird": "3.5.1",
+      "bluebird-retry": "0.11.0",
+      "chai": "^4.2.0",
+      "chai-as-promised": "^7.1.1",
+      "eslint": "^5.16.0",
+      "eslint-config-google": "^0.12.0",
+   }
+}
