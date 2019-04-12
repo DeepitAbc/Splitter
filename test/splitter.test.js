@@ -207,6 +207,12 @@ contract('Splitter', function(accounts) {
                   assert.strictEqual(payerBalance.toString(), "0", "payer balances not zero after withdraw");
                 });
 
+                it("should fail if no funds",  async function() {
+                  await web3.eth.expectedExceptionPromise(() => {
+                        return instance.withdraw({ from: user2, gas: MAX_GAS});
+                     }, MAX_GAS);
+                });
+
                 it("should fail if in pause",  async function() {
 		  const amount = web3.utils.toWei('100', 'Gwei');
                   await instance.makeSplit(user2, user3, { from: user1, gas: MAX_GAS, value: amount })
