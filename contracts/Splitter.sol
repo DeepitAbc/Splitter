@@ -15,6 +15,9 @@ contract Splitter {
     mapping(address => uint256) public balances;
     bool paused;
 
+    /**
+     * Modifier
+     */
     modifier onlyOwner {
         require(msg.sender == owner);
         _;
@@ -30,17 +33,24 @@ contract Splitter {
         _;
     }
 
+
     constructor() public {
         owner = msg.sender;
         emit LogSplitterCreated(msg.sender);
     }
 
+    /**
+     * Pause working
+     */
     function pause() public isWorking onlyOwner {
         paused = true;
 
         emit LogSplitterPaused(msg.sender);
     }
 
+    /**
+     * Resume working
+     */
     function resume() public isSuspended onlyOwner {
         paused = false;
 
@@ -77,11 +87,8 @@ contract Splitter {
         require(balances[msg.sender] != 0);
 
         uint256 amount = balances[msg.sender];
-
         balances[msg.sender] = 0;
-        
         msg.sender.transfer(amount);
-
         emit LogSplitterWithdraw(msg.sender, amount);   
     }
 }
