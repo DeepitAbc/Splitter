@@ -6,19 +6,51 @@ contract Splitter {
     using SafeMath for uint256;
 
     event LogSplitterCreated(address indexed owner);
-    event LogMakeSplit(address indexed beneficiary1, address indexed beneficiary2, uint256 amount,  uint256 remainder);
-    event LogAmountReceived(address indexed caller, uint256 indexed amount);
+    event LogSplitterPaused(address indexed owner);
+    event LogSplitterResumed(address indexed owner);
+    event LogMakeSplit(address indexed caller, address indexed beneficiary1, address indexed beneficiary2, uint256 amount,  uint256 remainder);
+    event LogSplitterWithdraw(address indexed beneficiary, uint256 indexed amount);
 
+    address owner;
     mapping(address => uint256) public balances;
+    bool paused;
+
+    modifier onlyOwner {
+        require(msg.sender == owner);
+        _;
+    }
+
+    modifier isWorking {
+        require(!paused);
+        _;
+    }
+
+    modifier isSuspended {
+        require(paused);
+        _;
+    }
 
     constructor() public {
+        owner = msg.sender;
         emit LogSplitterCreated(msg.sender);
+    }
+
+    function pause() public isWorking onlyOwner {
+        paused = true;
+
+        emit LogSplitterPaused(msg.sender);
+    }
+
+    function resume() public isSuspended onlyOwner {
+        paused = false;
+
+        emit LogSplitterResumed(msg.sender);
     }
 
     /**
      * Allow any users to make its funds split
      */
-    function makeSplit(address first, address second) public payable {
+    function makeSplit(address first, address second) isWorking public payable {
         require(first != address(0));
         require(second != address(0));
         require(msg.value != 0);
@@ -26,20 +58,30 @@ contract Splitter {
         uint256 remainder = msg.value.mod(2);
         uint256 half = msg.value.sub(remainder).div(2);
 
-        balances[msg.sender] = balances[msg.sender].add(remainder);
-        balances[first]      = balances[first].add(half);
-        balances[second]     = balances[second].add(half);
+        if (remainder != 0) {
+          balances[msg.sender] = balances[msg.sender].add(remainder);
+        }
 
-        emit LogMakeSplit(first, second, half, remainder);
+        if (half != 0) {
+           balances[first]      = balances[first].add(half);
+           balances[second]     = balances[second].add(half);
+        }
+
+        emit LogMakeSplit(msg.sender, first, second, half, remainder);
     }
 
     /**
-     * Allow investing by just sending money to the contract address.
+     * Allow any users to get its funds
      */
-    function () external payable {
-        require(msg.value != 0);
+    function withdraw() public isWorking {
+        require(balances[msg.sender] != 0);
 
-        balances[msg.sender] = balances[msg.sender].add(msg.value);
-        emit LogAmountReceived(msg.sender, msg.value);
+        uint256 amount = balances[msg.sender];
+
+        balances[msg.sender] = 0;
+        
+        msg.sender.transfer(amount);
+
+        emit LogSplitterWithdraw(msg.sender, amount);   
     }
 }
