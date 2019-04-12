@@ -12,10 +12,10 @@ You will create a smart contract named Splitter whereby:
 Implementation choice: 
 * using safemath to avoid overflow
 * event generation
-* any user can deposit funds
 * any user can split their new funds (using makeSplit() method);
 * if funds provided to the makeSplit are odd the remainder is leaved to the the sender
-* no method to retrives funds() from contract (so funds remains blocked in the contract) 
+* withdraw method to retrive funds
+* suspend and resume method
 
 Project contains:
 * contract
