@@ -18,6 +18,8 @@ require('chai')
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
+const bigNumber = web3.utils.BN;
+
 // Import the smart contracts
 const Splitter       = artifacts.require('Splitter.sol');
 
@@ -33,19 +35,18 @@ contract('Splitter', function(accounts) {
 
     describe('#Splitter()', async function() {
 
+       describe("#constructor()", async function() {
+          it("verify event constructor", async function() {
+             let instance = await Splitter.new( { from: owner , gas: MAX_GAS})
+             const receipt = await web3.eth.getTransactionReceiptMined(instance.transactionHash);
+             receipt.logs.length.should.be.equal(1);
+             const logEventSplitterCreated = receipt.logs[0];
+             logEventSplitterCreated.topics[0].should.be.equal(web3.utils.sha3('LogSplitterCreated(address)'));
+           });
+       });
+
         describe('Test methods', async function() {
             let instance;
-
-            describe("#constructor()", async function() {
-                it("verify event constructor", async function() {
-                   let instance = await Splitter.new( { from: owner , gas: MAX_GAS})
-                   .should.be.fulfilled;
-                   const receipt = await web3.eth.getTransactionReceiptMined(instance.transactionHash);
-                   receipt.logs.length.should.be.equal(1);
-                   const logEventSplitterCreated = receipt.logs[0];
-                   logEventSplitterCreated.topics[0].should.be.equal(web3.utils.sha3('LogSplitterCreated(address)'));
-                });
-            });
 
             beforeEach("should deploy Splitter instance",  async function() {
                 instance = await Splitter.new( { from: owner , gas: MAX_GAS}).should.be.fulfilled;
@@ -66,19 +67,20 @@ contract('Splitter', function(accounts) {
                 it("should fail if already paused", async function() {
                   await instance.pause({ from: owner, gas: MAX_GAS})
                   .should.be.fulfilled;
-                  await web3.eth.expectedExceptionPromise(() => {
-                        return instance.pause({ from: owner, gas: MAX_GAS });
-                     }, MAX_GAS);
+
+                  await web3.eth.expectedExceptionPromise(
+                      () => {return instance.pause({ from: owner, gas: MAX_GAS }); }, 
+                      MAX_GAS);
                 });
 
                 it("emit event", async function() {
                   let result = await instance.pause({ from: owner, gas: MAX_GAS})
                   .should.be.fulfilled;
-                  assert.equal(result.logs.length, 1);
+                  assert.strictEqual(result.logs.length, 1);
                   let logEvent = result.logs[0];
 
-                  assert.equal(logEvent.event, "LogSplitterPaused", "LogSplitterPaused name is wrong");
-                  assert.equal(logEvent.args.owner, owner, "caller is wrong");
+                  assert.strictEqual(logEvent.event, "LogSplitterPaused", "LogSplitterPaused name is wrong");
+                  assert.strictEqual(logEvent.args.owner, owner, "caller is wrong");
                 });
             });
 
@@ -93,15 +95,16 @@ contract('Splitter', function(accounts) {
                 it("should fail if called by any user", async function() {
                   await instance.pause({ from: owner, gas: MAX_GAS})
                   .should.be.fulfilled;
-                  await web3.eth.expectedExceptionPromise(() => {
-                        return instance.resume({ from: user1, gas: MAX_GAS });
-                     }, MAX_GAS);
+
+                  await web3.eth.expectedExceptionPromise(
+                      () => { return instance.resume({ from: user1, gas: MAX_GAS }); }, 
+                      MAX_GAS);
                 });
 
                 it("should fail if !paused ", async function() {
-                  await web3.eth.expectedExceptionPromise(() => {
-                        return instance.resume({ from: owner, gas: MAX_GAS });
-                     }, MAX_GAS);
+                  await web3.eth.expectedExceptionPromise(
+                      () => { return instance.resume({ from: owner, gas: MAX_GAS }); },
+                      MAX_GAS);
                 });
 
                 it("emit event", async function() {
@@ -109,11 +112,11 @@ contract('Splitter', function(accounts) {
                   .should.be.fulfilled;
                   let result = await instance.resume({ from: owner, gas: MAX_GAS})
                   .should.be.fulfilled;
-                  assert.equal(result.logs.length, 1);
+                  assert.strictEqual(result.logs.length, 1);
                   let logEvent = result.logs[0];
 
-                  assert.equal(logEvent.event, "LogSplitterResumed", "LogSplitterResumed name is wrong");
-                  assert.equal(logEvent.args.owner, owner, "caller is wrong");
+                  assert.strictEqual(logEvent.event, "LogSplitterResumed", "LogSplitterResumed name is wrong");
+                  assert.strictEqual(logEvent.args.owner, owner, "caller is wrong");
                 });
             });
 
@@ -122,18 +125,16 @@ contract('Splitter', function(accounts) {
                   await instance.pause({ from: owner, gas: MAX_GAS})
                   .should.be.fulfilled;
 
-                  await web3.eth.expectedExceptionPromise(() => {
-                        return instance.makeSplit(user2, user3, { from: user1, gas: MAX_GAS, value: 0  });
-                     }, MAX_GAS);
+                  await web3.eth.expectedExceptionPromise(
+                      () => { return instance.makeSplit(user2, user3, { from: user1, gas: MAX_GAS, value: 0  }); },
+                       MAX_GAS);
                 });
 
                 it("is OK if makeSplit is called after pause/resume",  async function() {
                   await instance.pause({ from: owner, gas: MAX_GAS})
                   .should.be.fulfilled;
-
                   await instance.resume({ from: owner, gas: MAX_GAS})
                   .should.be.fulfilled;
-
                   await instance.makeSplit(user2, user3, { from: user1, gas: MAX_GAS, value: 10  })
                   .should.be.fulfilled;
                 });
@@ -141,58 +142,75 @@ contract('Splitter', function(accounts) {
                 it("should fail if first beneficiary address is zero", async function() {
 
 		  const amount = web3.utils.toWei('100', 'Gwei');
-
-                  await web3.eth.expectedExceptionPromise(() => {
-                        return instance.makeSplit(ZERO_ADDRESS, user3, { from: user1, gas: MAX_GAS, value: amount });
-                     }, MAX_GAS);
+                  await web3.eth.expectedExceptionPromise(
+                      () => { return instance.makeSplit(ZERO_ADDRESS, user3, { from: user1, gas: MAX_GAS, value: amount }); },
+                       MAX_GAS);
                 });
 
                 it("should fail if beneficiary2 address is zero", async function() {
 		  const amount = web3.utils.toWei('100', 'Gwei');
-
-                  await web3.eth.expectedExceptionPromise(() => {
-                        return instance.makeSplit(user2, ZERO_ADDRESS, { from: user1, gas: MAX_GAS, value: amount });
-                     }, MAX_GAS);
-
+                  await web3.eth.expectedExceptionPromise(
+                      () => { return instance.makeSplit(user2, ZERO_ADDRESS, { from: user1, gas: MAX_GAS, value: amount }); }, 
+                       MAX_GAS);
                 });
 
                 it("should fail if amount is zero",  async function() {
-                  await web3.eth.expectedExceptionPromise(() => {
-                        return instance.makeSplit(user2, user3, { from: user1, gas: MAX_GAS, value: 0  });
-                     }, MAX_GAS);
-               });
+                  await web3.eth.expectedExceptionPromise(
+                      () => { return instance.makeSplit(user2, user3, { from: user1, gas: MAX_GAS, value: 0  }); },
+                       MAX_GAS);
+                });
+
+                it("should fail if amount is 1 wei",  async function() {
+                  await web3.eth.expectedExceptionPromise(
+                      () => { return instance.makeSplit(user2, user3, { from: user1, gas: MAX_GAS, value: 1  }); },
+                       MAX_GAS);
+                });
  
-               [1, 10, 11, 100, 101, 1000001, 1000000002, 1000000101].forEach(weiAmount => {
-                 it(`should makeSplit ${weiAmount} wei between beneficiaries`, async function() {
+                const testValidMakeSplit = [
+                  { amount: 2,  half: 1, remainder: 0 },
+                  { amount: 10, half: 5, remainder: 0 },
+                  { amount: 11, half: 5, remainder: 1 },
+                  { amount: 100, half: 50, remainder: 0 },
+                  { amount: 101, half: 50, remainder: 1 },
+                  { amount: 1000001, half: 500000, remainder: 1 },
+                  { amount: 1000002, half: 500001, remainder: 0 }]
 
-                    const remainder = weiAmount % 2;
-                    const half = (weiAmount - remainder) / 2;
+                testValidMakeSplit.forEach(async function(validMakeSplitRecord) {
+                    const weiAmount = validMakeSplitRecord.amount;
+                    const remainder = validMakeSplitRecord.remainder;
+                    const half = validMakeSplitRecord.half;
+                    it(`should makeSplit ${weiAmount} wei between beneficiaries`, async function() {
 
-                    await instance.makeSplit(user2, user3, { from: user1, gas: MAX_GAS, value: weiAmount });
-                    let payerBalance = await instance.balances(user1);  
-                    assert.strictEqual(payerBalance.toString(), remainder.toString(), "payer balance not equal to amount");
-                    let beneficiary1Balance = await instance.balances(user2);
-                    assert.strictEqual(beneficiary1Balance.toString(), half.toString(), "first beneficiary balance is wrong");
-                    let beneficiary2Balance = await instance.balances(user3);
-                    assert.strictEqual(beneficiary2Balance.toString(), half.toString(), "second beneficiary balance is wrong");
-                 });
-              });
 
-              it("verify the emitted event",  async function() {
-		const amount = web3.utils.toWei('100', 'Gwei');
+                       await instance.makeSplit(user2, user3, { from: user1, gas: MAX_GAS, value: weiAmount });
+                       let payerBalance = await instance.balances(user1);  
+                       assert.strictEqual(payerBalance.toString(), remainder.toString(), "payer balance not equal to amount");
+                       let beneficiary1Balance = await instance.balances(user2);
+                       assert.strictEqual(beneficiary1Balance.toString(), half.toString(), "first beneficiary balance is wrong");
+                       let beneficiary2Balance = await instance.balances(user3);
+                       assert.strictEqual(beneficiary2Balance.toString(), half.toString(), "second beneficiary balance is wrong");
+                    });
+                });
 
-                const result = await instance.makeSplit(user2, user3, { from: user1, gas: MAX_GAS, value: amount })
-                .should.be.fulfilled;
-                assert.equal(result.logs.length, 1);
-                let logEvent = result.logs[0];
+                it("verify the emitted event",  async function() {
+	  	  const amount = web3.utils.toWei('100', 'Gwei');
 
-                assert.equal(logEvent.event, "LogMakeSplit", "LogMakeSplit name is wrong");
-                assert.equal(logEvent.args.caller, user1, "caller beneficiary is wrong");
-                assert.equal(logEvent.args.beneficiary1, user2, "first beneficiary is wrong");
-                assert.equal(logEvent.args.beneficiary2, user3, "second beneficiary is wrong");
-                assert.equal(logEvent.args.amount, amount/2, "arg amount is wrong: " + logEvent.args.amount/2);
-                assert.equal(logEvent.args.remainder, amount%2, "arg amount is wrong: " + logEvent.args.amount/2);
-              });
+                  const amountBN = new bigNumber(amount);
+                  const expectedHalf = amountBN.div(new bigNumber('2'));
+                  const expectedRem = amountBN.mod(new bigNumber('2'));
+
+                  const result = await instance.makeSplit(user2, user3, { from: user1, gas: MAX_GAS, value: amountBN })
+                  .should.be.fulfilled;
+                  assert.strictEqual(result.logs.length, 1);
+                  let logEvent = result.logs[0];
+
+                  assert.strictEqual(logEvent.event, "LogMakeSplit", "LogMakeSplit name is wrong");
+                  assert.strictEqual(logEvent.args.caller, user1, "caller beneficiary is wrong");
+                  assert.strictEqual(logEvent.args.beneficiary1, user2, "first beneficiary is wrong");
+                  assert.strictEqual(logEvent.args.beneficiary2, user3, "second beneficiary is wrong");
+                  assert.strictEqual(logEvent.args.amount.toString(), expectedHalf.toString(), "arg amount is wrong: " + logEvent.args.amount);
+                  assert.strictEqual(logEvent.args.remainder.toString(), expectedRem.toString(), "arg remainder is wrong: " + logEvent.args.remainder);
+                });
             });
 
             describe("#withdraw()", async function() {
@@ -208,9 +226,9 @@ contract('Splitter', function(accounts) {
                 });
 
                 it("should fail if no funds",  async function() {
-                  await web3.eth.expectedExceptionPromise(() => {
-                        return instance.withdraw({ from: user2, gas: MAX_GAS});
-                     }, MAX_GAS);
+                  await web3.eth.expectedExceptionPromise(
+                      () => { return instance.withdraw({ from: user2, gas: MAX_GAS}); },
+                       MAX_GAS);
                 });
 
                 it("should fail if in pause",  async function() {
@@ -221,12 +239,12 @@ contract('Splitter', function(accounts) {
                   await instance.pause({ from: owner, gas: MAX_GAS})
                   .should.be.fulfilled;
 
-                  await web3.eth.expectedExceptionPromise(() => {
-                        return instance.withdraw({ from: user2, gas: MAX_GAS});
-                     }, MAX_GAS);
+                  await web3.eth.expectedExceptionPromise(
+                      () => { return instance.withdraw({ from: user2, gas: MAX_GAS}); }, 
+                       MAX_GAS);
                 });
 
-                it("is OK if withdraw is called after pause/resume",  async function() {
+                it("is OK if makeSplit/withdraw are called after pause/resume",  async function() {
                   await instance.pause({ from: owner, gas: MAX_GAS})
                   .should.be.fulfilled;
                   await instance.resume({ from: owner, gas: MAX_GAS})
@@ -237,9 +255,24 @@ contract('Splitter', function(accounts) {
                   await instance.withdraw({ from: user2, gas: MAX_GAS})
                   .should.be.fulfilled;
                 });
+
+                it("is OK if withdraw is called after pause/resume",  async function() {
+                  await instance.makeSplit(user2, user3, { from: user1, gas: MAX_GAS, value: 10  })
+                  .should.be.fulfilled;
+
+                  await instance.pause({ from: owner, gas: MAX_GAS})
+                  .should.be.fulfilled;
+                  await instance.resume({ from: owner, gas: MAX_GAS})
+                  .should.be.fulfilled;
+
+                  await instance.withdraw({ from: user2, gas: MAX_GAS})
+                  .should.be.fulfilled;
+                });
  
                 it("verify the emitted event",  async function() {
 		  const amount = web3.utils.toWei('100', 'Gwei');
+                  const amountBN = new bigNumber(amount);
+                  const expectedHalf = amountBN.div(new bigNumber('2'));
 
                   await instance.makeSplit(user2, user3, { from: user1, gas: MAX_GAS, value: amount })
                   .should.be.fulfilled;
@@ -247,12 +280,12 @@ contract('Splitter', function(accounts) {
                   const result = await instance.withdraw({ from: user2, gas: MAX_GAS})
                   .should.be.fulfilled;
 
-                  assert.equal(result.logs.length, 1);
+                  assert.strictEqual(result.logs.length, 1);
                   let logEvent = result.logs[0];
 
-                  assert.equal(logEvent.event, "LogSplitterWithdraw", "LogSplitterWithdraw name is wrong");
-                  assert.equal(logEvent.args.beneficiary, user2, "caller beneficiary is wrong");
-                  assert.equal(logEvent.args.amount, amount/2, "amount is wrong");
+                  assert.strictEqual(logEvent.event, "LogSplitterWithdraw", "LogSplitterWithdraw name is wrong");
+                  assert.strictEqual(logEvent.args.beneficiary, user2, "caller beneficiary is wrong");
+                  assert.strictEqual(logEvent.args.amount.toString(), expectedHalf.toString(), "amount is wrong");
               });
            });
         });
