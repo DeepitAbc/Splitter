@@ -72,10 +72,9 @@ contract Splitter {
           balances[msg.sender] = balances[msg.sender].add(remainder);
         }
 
-        if (half != 0) {
-           balances[first]      = balances[first].add(half);
-           balances[second]     = balances[second].add(half);
-        }
+        require(half != 0);
+        balances[first]      = balances[first].add(half);
+        balances[second]     = balances[second].add(half);
 
         emit LogMakeSplit(msg.sender, first, second, half, remainder);
     }
@@ -84,11 +83,13 @@ contract Splitter {
      * Allow any users to get its funds
      */
     function withdraw() public isWorking {
-        require(balances[msg.sender] != 0);
-
         uint256 amount = balances[msg.sender];
+        require(amount != 0);
+
         balances[msg.sender] = 0;
-        msg.sender.transfer(amount);
+
         emit LogSplitterWithdraw(msg.sender, amount);   
+
+        msg.sender.transfer(amount);
     }
 }
