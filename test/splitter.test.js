@@ -18,13 +18,13 @@ require('chai')
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
-const bigNumber = web3.utils.BN;
+const { BN, sha3 } = web3.utils;
 
 // Import the smart contracts
 const Splitter       = artifacts.require('Splitter.sol');
 
 contract('Splitter', function(accounts) {
-    const MAX_GAS               = 4700000;
+    const MAX_GAS = 4700000;
 
 
     let owner, user1, user2, user3;
@@ -35,9 +35,9 @@ contract('Splitter', function(accounts) {
 
     describe('#Splitter()', async function() {
 
-       describe("#constructor()", async function() {
+       describe("#constructor(pause=false)", async function() {
           it("verify event constructor", async function() {
-             let instance = await Splitter.new( { from: owner , gas: MAX_GAS})
+             let instance = await Splitter.new( false, { from: owner , gas: MAX_GAS})
              const receipt = await web3.eth.getTransactionReceiptMined(instance.transactionHash);
              receipt.logs.length.should.be.equal(1);
              const logEventSplitterCreated = receipt.logs[0];
@@ -45,11 +45,43 @@ contract('Splitter', function(accounts) {
            });
        });
 
+       describe("#constructor(pause=true)", async function() {
+          let pausedInstance;
+          beforeEach("should deploy Splitter pausedInstance",  async function() {
+             pausedInstance = await Splitter.new(true, { from: owner , gas: MAX_GAS}).should.be.fulfilled;
+          });
+
+          it("verify makeSplit fail", async function() {
+             await web3.eth.expectedExceptionPromise(
+                   () => { return pausedInstance.makeSplit(user2, user3, { from: user1, gas: MAX_GAS, value: 10  }); },
+                   MAX_GAS);
+          });
+
+          it("verify after resume() makeSplit is OK", async function() {
+             await pausedInstance.resume({ from: owner, gas: MAX_GAS})
+             .should.be.fulfilled;
+             await pausedInstance.makeSplit(user2, user3, { from: user1, gas: MAX_GAS, value: 10  })
+             .should.be.fulfilled;
+           });
+       });
+
+       describe("#constructor(true)", async function() {
+          it("verify if contract is deployed on pause and then resume() the makeSplit is OK", async function() {
+             let instance = await Splitter.new(true, { from: owner , gas: MAX_GAS})
+
+             await instance.resume({ from: owner, gas: MAX_GAS})
+             .should.be.fulfilled;
+             await instance.makeSplit(user2, user3, { from: user1, gas: MAX_GAS, value: 10  })
+             .should.be.fulfilled;
+           });
+       });
+
+
         describe('Test methods', async function() {
             let instance;
 
             beforeEach("should deploy Splitter instance",  async function() {
-                instance = await Splitter.new( { from: owner , gas: MAX_GAS}).should.be.fulfilled;
+                instance = await Splitter.new(false, { from: owner , gas: MAX_GAS}).should.be.fulfilled;
             });
 
             describe("#pause()", async function() {
@@ -127,7 +159,7 @@ contract('Splitter', function(accounts) {
 
                   await web3.eth.expectedExceptionPromise(
                       () => { return instance.makeSplit(user2, user3, { from: user1, gas: MAX_GAS, value: 0  }); },
-                       MAX_GAS);
+                      MAX_GAS);
                 });
 
                 it("is OK if makeSplit is called after pause/resume",  async function() {
@@ -144,26 +176,26 @@ contract('Splitter', function(accounts) {
 		  const amount = web3.utils.toWei('100', 'Gwei');
                   await web3.eth.expectedExceptionPromise(
                       () => { return instance.makeSplit(ZERO_ADDRESS, user3, { from: user1, gas: MAX_GAS, value: amount }); },
-                       MAX_GAS);
+                      MAX_GAS);
                 });
 
                 it("should fail if beneficiary2 address is zero", async function() {
 		  const amount = web3.utils.toWei('100', 'Gwei');
                   await web3.eth.expectedExceptionPromise(
                       () => { return instance.makeSplit(user2, ZERO_ADDRESS, { from: user1, gas: MAX_GAS, value: amount }); }, 
-                       MAX_GAS);
+                      MAX_GAS);
                 });
 
                 it("should fail if amount is zero",  async function() {
                   await web3.eth.expectedExceptionPromise(
                       () => { return instance.makeSplit(user2, user3, { from: user1, gas: MAX_GAS, value: 0  }); },
-                       MAX_GAS);
+                      MAX_GAS);
                 });
 
                 it("should fail if amount is 1 wei",  async function() {
                   await web3.eth.expectedExceptionPromise(
                       () => { return instance.makeSplit(user2, user3, { from: user1, gas: MAX_GAS, value: 1  }); },
-                       MAX_GAS);
+                      MAX_GAS);
                 });
  
                 const testValidMakeSplit = [
@@ -195,9 +227,9 @@ contract('Splitter', function(accounts) {
                 it("verify the emitted event",  async function() {
 	  	  const amount = web3.utils.toWei('100', 'Gwei');
 
-                  const amountBN = new bigNumber(amount);
-                  const expectedHalf = amountBN.div(new bigNumber('2'));
-                  const expectedRem = amountBN.mod(new bigNumber('2'));
+                  const amountBN = new BN(amount);
+                  const expectedHalf = amountBN.div(new BN('2'));
+                  const expectedRem = amountBN.mod(new BN('2'));
 
                   const result = await instance.makeSplit(user2, user3, { from: user1, gas: MAX_GAS, value: amountBN })
                   .should.be.fulfilled;
@@ -228,7 +260,7 @@ contract('Splitter', function(accounts) {
                 it("should fail if no funds",  async function() {
                   await web3.eth.expectedExceptionPromise(
                       () => { return instance.withdraw({ from: user2, gas: MAX_GAS}); },
-                       MAX_GAS);
+                      MAX_GAS);
                 });
 
                 it("should fail if in pause",  async function() {
@@ -241,7 +273,7 @@ contract('Splitter', function(accounts) {
 
                   await web3.eth.expectedExceptionPromise(
                       () => { return instance.withdraw({ from: user2, gas: MAX_GAS}); }, 
-                       MAX_GAS);
+                      MAX_GAS);
                 });
 
                 it("is OK if makeSplit/withdraw are called after pause/resume",  async function() {
@@ -271,8 +303,8 @@ contract('Splitter', function(accounts) {
  
                 it("verify the emitted event",  async function() {
 		  const amount = web3.utils.toWei('100', 'Gwei');
-                  const amountBN = new bigNumber(amount);
-                  const expectedHalf = amountBN.div(new bigNumber('2'));
+                  const amountBN = new BN(amount);
+                  const expectedHalf = amountBN.div(new BN('2'));
 
                   await instance.makeSplit(user2, user3, { from: user1, gas: MAX_GAS, value: amount })
                   .should.be.fulfilled;
