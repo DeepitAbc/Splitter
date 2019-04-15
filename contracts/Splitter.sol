@@ -1,8 +1,10 @@
 pragma solidity ^0.5.0;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "./Ownable.sol";
+import "./Pausable.sol";
 
-contract Splitter {
+contract Splitter is Ownable, Pausable {
     using SafeMath for uint256;
 
     event LogSplitterCreated(address indexed owner);
@@ -11,51 +13,27 @@ contract Splitter {
     event LogMakeSplit(address indexed caller, address indexed beneficiary1, address indexed beneficiary2, uint256 amount,  uint256 remainder);
     event LogSplitterWithdraw(address indexed beneficiary, uint256 indexed amount);
 
-    address owner;
     mapping(address => uint256) public balances;
-    bool paused;
 
-    /**
-     * Modifier
-     */
-    modifier onlyOwner {
-        require(msg.sender == owner);
-        _;
-    }
-
-    modifier isWorking {
-        require(!paused);
-        _;
-    }
-
-    modifier isSuspended {
-        require(paused);
-        _;
-    }
-
-
-    constructor() public {
-        owner = msg.sender;
+    constructor(bool _paused) Pausable(_paused) public {
         emit LogSplitterCreated(msg.sender);
     }
+
 
     /**
      * Pause working
      */
     function pause() public isWorking onlyOwner {
-        paused = true;
-
-        emit LogSplitterPaused(msg.sender);
+       pauseInternal();
     }
 
     /**
      * Resume working
      */
     function resume() public isSuspended onlyOwner {
-        paused = false;
-
-        emit LogSplitterResumed(msg.sender);
+       resumeInternal();
     }
+
 
     /**
      * Allow any users to make its funds split
