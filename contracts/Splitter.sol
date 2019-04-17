@@ -19,21 +19,19 @@ contract Splitter is Ownable, Pausable {
         emit LogSplitterCreated(msg.sender);
     }
 
-
     /**
      * Pause working
      */
-    function pause() public isWorking onlyOwner {
+    function pause() public onlyOwner {
        pauseInternal();
     }
 
     /**
      * Resume working
      */
-    function resume() public isSuspended onlyOwner {
+    function resume() public  onlyOwner {
        resumeInternal();
     }
-
 
     /**
      * Allow any users to make its funds split
@@ -45,14 +43,13 @@ contract Splitter is Ownable, Pausable {
 
         uint256 remainder = msg.value.mod(2);
         uint256 half = msg.value.sub(remainder).div(2);
+        require(half != 0);
+        balances[first]      = balances[first].add(half);
+        balances[second]     = balances[second].add(half);
 
         if (remainder != 0) {
           balances[msg.sender] = balances[msg.sender].add(remainder);
         }
-
-        require(half != 0);
-        balances[first]      = balances[first].add(half);
-        balances[second]     = balances[second].add(half);
 
         emit LogMakeSplit(msg.sender, first, second, half, remainder);
     }
