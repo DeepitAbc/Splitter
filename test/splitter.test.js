@@ -16,9 +16,10 @@ require('chai')
     .use(require('bn-chai')(web3.utils.BN))
     .should();
 
+const { BN, sha3, toWei } = web3.utils;
+
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
-const { BN, sha3 } = web3.utils;
 
 // Import the smart contracts
 const Splitter       = artifacts.require('Splitter.sol');
@@ -48,7 +49,7 @@ contract('Splitter', function(accounts) {
        describe("#constructor(pause=true)", async function() {
           let pausedInstance;
           beforeEach("should deploy Splitter pausedInstance",  async function() {
-             pausedInstance = await Splitter.new(true, { from: owner , gas: MAX_GAS}).should.be.fulfilled;
+             pausedInstance = await Splitter.new(true, { from: owner , gas: MAX_GAS});
           });
 
           it("verify makeSplit fail", async function() {
@@ -116,6 +117,19 @@ contract('Splitter', function(accounts) {
                 });
             });
 
+            describe("#pauseInternal()", async function() {
+                it("fail calls pauseInternal", async function() {
+                   try { 
+                     await instance.pauseInternal({ from: owner, gas: MAX_GAS });
+                   } 
+                   catch(e) { 
+                      if (e.name != "TypeError") { 
+                         console.log ("ERROR:",e.name);
+                      } 
+                   } 
+                });
+            });
+
             describe("#resume()", async function() {
                 it("is OK if called by owner", async function() {
                   await instance.pause({ from: owner, gas: MAX_GAS})
@@ -173,14 +187,14 @@ contract('Splitter', function(accounts) {
  
                 it("should fail if first beneficiary address is zero", async function() {
 
-		  const amount = web3.utils.toWei('100', 'Gwei');
+		  const amount = toWei('100', 'Gwei');
                   await web3.eth.expectedExceptionPromise(
                       () => { return instance.makeSplit(ZERO_ADDRESS, user3, { from: user1, gas: MAX_GAS, value: amount }); },
                       MAX_GAS);
                 });
 
                 it("should fail if beneficiary2 address is zero", async function() {
-		  const amount = web3.utils.toWei('100', 'Gwei');
+		  const amount = toWei('100', 'Gwei');
                   await web3.eth.expectedExceptionPromise(
                       () => { return instance.makeSplit(user2, ZERO_ADDRESS, { from: user1, gas: MAX_GAS, value: amount }); }, 
                       MAX_GAS);
@@ -225,7 +239,7 @@ contract('Splitter', function(accounts) {
                 });
 
                 it("verify the emitted event",  async function() {
-	  	  const amount = web3.utils.toWei('100', 'Gwei');
+	  	  const amount = toWei('100', 'Gwei');
 
                   const amountBN = new BN(amount);
                   const expectedHalf = amountBN.div(new BN('2'));
@@ -247,7 +261,7 @@ contract('Splitter', function(accounts) {
 
             describe("#withdraw()", async function() {
                 it("should OK if have funds",  async function() {
-		  const amount = web3.utils.toWei('100', 'Gwei');
+		  const amount = toWei('100', 'Gwei');
                   await instance.makeSplit(user2, user3, { from: user1, gas: MAX_GAS, value: amount })
                   .should.be.fulfilled;
                   let splitterBalancePre  = await web3.eth.getBalance(instance.address);
@@ -264,7 +278,7 @@ contract('Splitter', function(accounts) {
                 });
 
                 it("should fail if in pause",  async function() {
-		  const amount = web3.utils.toWei('100', 'Gwei');
+		  const amount = toWei('100', 'Gwei');
                   await instance.makeSplit(user2, user3, { from: user1, gas: MAX_GAS, value: amount })
                   .should.be.fulfilled;
 
@@ -302,7 +316,7 @@ contract('Splitter', function(accounts) {
                 });
  
                 it("verify the emitted event",  async function() {
-		  const amount = web3.utils.toWei('100', 'Gwei');
+		  const amount = toWei('100', 'Gwei');
                   const amountBN = new BN(amount);
                   const expectedHalf = amountBN.div(new BN('2'));
 
