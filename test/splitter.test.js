@@ -10,13 +10,13 @@ web3.eth.promisifyWeb3              = require("../utils/promisifyWeb3.js");
 web3.eth.sequentialPromise          = require("../utils/sequentialPromise.js");
 web3.eth.getTransactionReceiptMined = require('../utils/getTransactionReceiptMined.js');
 
+const { BN, sha3, toWei } = web3.utils;
 
 require('chai')
     .use(require('chai-as-promised'))
-    .use(require('bn-chai')(web3.utils.BN))
+    .use(require('bn-chai')(BN))
     .should();
 
-const { BN, sha3, toWei } = web3.utils;
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -119,14 +119,7 @@ contract('Splitter', function(accounts) {
 
             describe("#pauseInternal()", async function() {
                 it("fail calls pauseInternal", async function() {
-                   try { 
-                     await instance.pauseInternal({ from: owner, gas: MAX_GAS });
-                   } 
-                   catch(e) { 
-                      if (e.name != "TypeError") { 
-                         console.log ("ERROR:",e.name);
-                      } 
-                   } 
+                   assert.isUndefined(instance.pauseInterval, "pauseInterval is defined");
                 });
             });
 
@@ -316,15 +309,42 @@ contract('Splitter', function(accounts) {
                 });
  
                 it("verify the emitted event",  async function() {
-		  const amount = toWei('100', 'Gwei');
+                  const amount = toWei('100', 'Gwei');
                   const amountBN = new BN(amount);
                   const expectedHalf = amountBN.div(new BN('2'));
 
                   await instance.makeSplit(user2, user3, { from: user1, gas: MAX_GAS, value: amount })
                   .should.be.fulfilled;
 
+                  let splitterBalancePre  = await web3.eth.getBalance(instance.address);
+                  const splitterBalancePreBN = new BN(splitterBalancePre);
+                  let userBalancePre  = await web3.eth.getBalance(user2);
+                  const userBalancePreBN = new BN(userBalancePre);
+        
+                  let payerBalance = await instance.balances(user2);  
+                  const payerBalancePreBN = new BN(payerBalance);
+
                   const result = await instance.withdraw({ from: user2, gas: MAX_GAS})
                   .should.be.fulfilled;
+
+                  // calculates transaction total gas
+                  let gasUsed = (result.receipt.gasUsed);
+                  let gasUsedBN = new BN(gasUsed);
+                  let receipt = await web3.eth.getTransaction(result.tx);
+                  let gasPrice = receipt.gasPrice;
+                  let gasPriceBN = new BN(gasPrice);
+                  let totalGasBN = gasPriceBN.mul(gasUsedBN);
+
+                  let userBalancePost  = await web3.eth.getBalance(user2);
+                  const userBalancePostBN = new BN(userBalancePost);
+
+                  // calculates expected user balances
+                  let expectedUserBalance = userBalancePreBN.add(payerBalancePreBN).sub(totalGasBN);
+                  assert.strictEqual(expectedUserBalance.toString(), userBalancePostBN.toString(), "user balances are not correct");
+           
+
+                  payerBalance = await instance.balances(user2);  
+                  assert.strictEqual(payerBalance.toString(), "0", "payer balances not zero after withdraw");
 
                   assert.strictEqual(result.logs.length, 1);
                   let logEvent = result.logs[0];
