@@ -1,10 +1,9 @@
 pragma solidity ^0.5.0;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "./Ownable.sol";
 import "./Pausable.sol";
 
-contract Splitter is Ownable, Pausable {
+contract Splitter is Pausable {
     using SafeMath for uint256;
 
     event LogSplitterCreated(address indexed owner);
@@ -17,20 +16,6 @@ contract Splitter is Ownable, Pausable {
 
     constructor(bool _paused) Pausable(_paused) public {
         emit LogSplitterCreated(msg.sender);
-    }
-
-    /**
-     * Pause working
-     */
-    function pause() public onlyOwner {
-       pauseInternal();
-    }
-
-    /**
-     * Resume working
-     */
-    function resume() public  onlyOwner {
-       resumeInternal();
     }
 
     /**
