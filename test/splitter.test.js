@@ -117,12 +117,6 @@ contract('Splitter', function(accounts) {
                 });
             });
 
-            describe("#pauseInternal()", async function() {
-                it("fail calls pauseInternal", async function() {
-                   assert.isUndefined(instance.pauseInterval, "pauseInterval is defined");
-                });
-            });
-
             describe("#resume()", async function() {
                 it("is OK if called by owner", async function() {
                   await instance.pause({ from: owner, gas: MAX_GAS})
@@ -338,17 +332,16 @@ contract('Splitter', function(accounts) {
                   let userBalancePost  = await web3.eth.getBalance(user2);
                   const userBalancePostBN = new BN(userBalancePost);
 
-                  // calculates expected user balances
+                  // calculates expected user balances take account also GAS amount
                   let expectedUserBalance = userBalancePreBN.add(payerBalancePreBN).sub(totalGasBN);
                   assert.strictEqual(expectedUserBalance.toString(), userBalancePostBN.toString(), "user balances are not correct");
            
-
+                  // verify the user balance after withdraw is 0
                   payerBalance = await instance.balances(user2);  
                   assert.strictEqual(payerBalance.toString(), "0", "payer balances not zero after withdraw");
 
                   assert.strictEqual(result.logs.length, 1);
                   let logEvent = result.logs[0];
-
                   assert.strictEqual(logEvent.event, "LogSplitterWithdraw", "LogSplitterWithdraw name is wrong");
                   assert.strictEqual(logEvent.args.beneficiary, user2, "caller beneficiary is wrong");
                   assert.strictEqual(logEvent.args.amount.toString(), expectedHalf.toString(), "amount is wrong");
