@@ -2,26 +2,30 @@
 <html lang="en" dir="ltr">
    <head>
      <title>Splitter</title>
+     <meta name="author" content="Paolo Bruzzone">
      <meta charset="utf-8">
-     <script src="jquery-3.3.1.min.js"></script>
+     <link rel="stylesheet" type="text/css" href="./styles.css">
    </head>
 
    <body>
-
+     <h1>Splitter</h1>
      <div><span id="contractBalance">Loading...</span> ContractBalance</div>
      <div><span id="aliceBalance">Loading...</span> AliceBalance</div>
      <div><span id="bobBalance">Loading...</span> BobBalance </div>
      <div><span id="carolBalance">Loading...</span> CarolBalance</div>
+     <br>
      <div>
        <button id="updateBalances">updateBalances</button>.
+       <br>
        <input name="amount" type="number" placeholder="0" /> 
        <button id="makeSplit">Make-Split</button>.
-       <button id="withdrawAlice">Withdraw[Alice]</button>.
+       <br>
+       <button id="withdrawAlice" >Withdraw[Alice]</button>.
        <button id="withdrawBob">Withdraw[Bob]</button>.
        <button id="withdrawCarol">Withdraw[Carol]</button>.
+       <br>
      </div>
-     <div><span id="status"></span> Last Operation Status</div>
+     <div><span id="status"></span> <- Last Operation Status</div>
      <script src="js/app.js"></script>
    </body>
-
 </html>
