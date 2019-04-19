@@ -1,9 +1,11 @@
 pragma solidity ^0.5.0;
 
+import "./Ownable.sol";
+
 /**
  * @title Pausable
  */
-contract Pausable {
+contract Pausable is Ownable {
     event LogSplitterPaused(address indexed owner);
     event LogSplitterResumed(address indexed owner);
 
@@ -28,7 +30,7 @@ contract Pausable {
     /**
      * Pause working
      */
-    function pauseInternal() internal isWorking {
+    function pause() public isWorking onlyOwner {
         paused = true;
 
         emit LogSplitterPaused(msg.sender);
@@ -37,7 +39,7 @@ contract Pausable {
     /**
      * Resume working
      */
-    function resumeInternal() internal isSuspended {
+    function resume() public isSuspended onlyOwner {
         paused = false;
 
         emit LogSplitterResumed(msg.sender);
