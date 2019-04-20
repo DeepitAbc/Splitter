@@ -36,10 +36,11 @@ window.addEventListener('load', async () => {
 
     network = await window.web3.eth.net.getId();
     console.log ("network",network.toString(10));
+    let instance;
 
     try {
        console.log ("Try to get Splitter instance ...");
-       let instance = await Splitter.deployed();
+       instance = await Splitter.deployed();
     }
     catch(error) {
        $("#status").html("error to rcess nod");
