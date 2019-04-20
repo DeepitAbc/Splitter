@@ -29,7 +29,6 @@ window.addEventListener('load', async () => {
        $("#bobBalance").html("NA");
        $("#carolBalance").html("NA");
        $("#status").html("No account with which to transact");
-       throw new Error("No account with which to transact");
     }
     let aliceAccount = accounts[0];
     let bobAccount = accounts[1];
@@ -38,8 +37,19 @@ window.addEventListener('load', async () => {
     network = await window.web3.eth.net.getId();
     console.log ("network",network.toString(10));
 
-    let instance = await Splitter.deployed();
+    try {
+       console.log ("Try to get Splitter instance ...");
+       let instance = await Splitter.deployed();
+    }
+    catch(error) {
+       $("#status").html("error to rcess nod");
+       $("#contractBalance").html("NA");
+       $("#bobBalance").html("NA");
+       $("#carolBalance").html("NA");
+       console.log ("Error:",error);
+    }
     console.log ("contract Address",instance.address);
+
     await showBalances();
 
     $("#updateBalances").click(async function(){
