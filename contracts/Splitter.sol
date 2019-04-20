@@ -7,14 +7,12 @@ contract Splitter is Pausable {
     using SafeMath for uint256;
 
     event LogSplitterCreated(address indexed owner);
-    event LogSplitterPaused(address indexed owner);
-    event LogSplitterResumed(address indexed owner);
     event LogMakeSplit(address indexed caller, address indexed beneficiary1, address indexed beneficiary2, uint256 amount,  uint256 remainder);
     event LogSplitterWithdraw(address indexed beneficiary, uint256 indexed amount);
 
     mapping(address => uint256) public balances;
 
-    constructor(bool _paused) Pausable(_paused) public {
+    constructor()  public {
         emit LogSplitterCreated(msg.sender);
     }
 
