@@ -22,8 +22,7 @@ contract Pausable is Ownable {
     }
 
 
-    constructor(bool _paused) public {
-        paused = _paused;
+    constructor() internal {
     }
 
 
