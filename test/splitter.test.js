@@ -36,42 +36,10 @@ contract('Splitter', function(accounts) {
 
     describe('#Splitter()', async function() {
 
-       describe("#constructor(pause=false)", async function() {
-          it("verify event constructor", async function() {
-             let instance = await Splitter.new( false, { from: owner , gas: MAX_GAS})
-             const receipt = await web3.eth.getTransactionReceiptMined(instance.transactionHash);
-             receipt.logs.length.should.be.equal(1);
-             const logEventSplitterCreated = receipt.logs[0];
-             logEventSplitterCreated.topics[0].should.be.equal(web3.utils.sha3('LogSplitterCreated(address)'));
-           });
-       });
-
-       describe("#constructor(pause=true)", async function() {
-          let pausedInstance;
-          beforeEach("should deploy Splitter pausedInstance",  async function() {
-             pausedInstance = await Splitter.new(true, { from: owner , gas: MAX_GAS});
-          });
-
-          it("verify makeSplit fail", async function() {
-             await web3.eth.expectedExceptionPromise(
-                   () => { return pausedInstance.makeSplit(user2, user3, { from: user1, gas: MAX_GAS, value: 10  }); },
-                   MAX_GAS);
-          });
-
-          it("verify after resume() makeSplit is OK", async function() {
-             await pausedInstance.resume({ from: owner, gas: MAX_GAS})
-             .should.be.fulfilled;
-             await pausedInstance.makeSplit(user2, user3, { from: user1, gas: MAX_GAS, value: 10  })
-             .should.be.fulfilled;
-           });
-       });
-
-       describe("#constructor(true)", async function() {
+       describe("#constructor()", async function() {
           it("verify if contract is deployed on pause and then resume() the makeSplit is OK", async function() {
-             let instance = await Splitter.new(true, { from: owner , gas: MAX_GAS})
+             let instance = await Splitter.new({ from: owner , gas: MAX_GAS})
 
-             await instance.resume({ from: owner, gas: MAX_GAS})
-             .should.be.fulfilled;
              await instance.makeSplit(user2, user3, { from: user1, gas: MAX_GAS, value: 10  })
              .should.be.fulfilled;
            });
@@ -82,7 +50,7 @@ contract('Splitter', function(accounts) {
             let instance;
 
             beforeEach("should deploy Splitter instance",  async function() {
-                instance = await Splitter.new(false, { from: owner , gas: MAX_GAS}).should.be.fulfilled;
+                instance = await Splitter.new({ from: owner , gas: MAX_GAS}).should.be.fulfilled;
             });
 
             describe("#pause()", async function() {
