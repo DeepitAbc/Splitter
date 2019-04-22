@@ -20,4 +20,4 @@ Implementation choice:
 Project contains:
 * contract
 * test
-* IN PROGRESS WEB
+* app
