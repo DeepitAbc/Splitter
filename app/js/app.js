@@ -2,7 +2,7 @@
 require("file-loader?name=../index.html!../index.html");
 
 const Web3 = require("web3");
-const Promise = require("bluebird");
+//const Promise = require("bluebird");
 const truffleContract = require("truffle-contract");
 const $ = require("jquery");
 // Not to forget our built contract
@@ -24,11 +24,14 @@ window.addEventListener('load', async () => {
 
     const accounts = await window.web3.eth.getAccounts();
     console.log("AccountsLength:",accounts.length);
-    if (accounts.length == 0) {
+    if (accounts.length === 0) {
        $("#contractBalance").html("NA");
        $("#bobBalance").html("NA");
        $("#carolBalance").html("NA");
+       $("#aliceBalance").html("NA");
        $("#status").html("No account with which to transact");
+       console.log ("ERROR: No Account available");
+       return;
     }
     let aliceAccount = accounts[0];
     let bobAccount = accounts[1];
@@ -112,8 +115,10 @@ window.addEventListener('load', async () => {
            console.log ("split: ",carolAccount, ",",bobAccount, " from: ",aliceAccount);
            console.log ("amount: ", amount);
            let txObj = await instance.makeSplit(carolAccount, bobAccount, 
-                { from: aliceAccount, gas: GAS, value: amount});
-           $("#status").html("Transaction in progress ... " + txObj.txHash)
+                { from: aliceAccount, gas: GAS, value: amount}).on(
+                    "transactionHash",
+                    txHash => $("#status").html("Transaction on the way " + txHash))
+           //$("#status").html("Transaction in progress ... " + txObj.txHash)
 
            const receipt = txObj.receipt;
            console.log("got receipt", receipt);
