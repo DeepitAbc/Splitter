@@ -115,10 +115,9 @@ window.addEventListener('load', async () => {
            console.log ("split: ",carolAccount, ",",bobAccount, " from: ",aliceAccount);
            console.log ("amount: ", amount);
            let txObj = await instance.makeSplit(carolAccount, bobAccount, 
-                { from: aliceAccount, gas: GAS, value: amount}).on(
-                    "transactionHash",
+                { from: aliceAccount, gas: GAS, value: amount})
+                .on("transactionHash",
                     txHash => $("#status").html("Transaction on the way " + txHash))
-           //$("#status").html("Transaction in progress ... " + txObj.txHash)
 
            const receipt = txObj.receipt;
            console.log("got receipt", receipt);
@@ -145,8 +144,9 @@ window.addEventListener('load', async () => {
        const GAS = 300000; 
 
        try {
-           let txObj = await instance.withdraw( { from: address, gas: GAS});
-           $("#status").html("Transaction in progress ... " + txObj.txHash)
+           let txObj = await instance.withdraw( { from: address, gas: GAS})
+                .on("transactionHash",
+                    txHash => $("#status").html("Transaction on the way " + txHash))
 
            const receipt = txObj.receipt;
            console.log("got receipt", receipt);
